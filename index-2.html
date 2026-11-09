@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>قیمت و موجودی فروشگاه</title>
+<style>
+:root{
+  --bg:#ECEFF2; --surface:#FFFFFF; --ink:#17212B; --muted:#5F6C79; --line:#D6DCE2;
+  --brand:#1D3B5E; --brand-ink:#FFFFFF;
+  --chg:#8F5300; --chg-bg:#FFF1D6; --chg-line:#E0A23C;
+  --ok:#1B7550; --ok-bg:#E1F2E9;
+  --out:#A8342D; --out-bg:#FAE6E3;
+  --inf:#44586C; --inf-bg:#E4EAF0;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0F151B; --surface:#18212A; --ink:#E7ECF1; --muted:#95A2AF; --line:#2B3744;
+    --brand:#8DB4E2; --brand-ink:#0E1620;
+    --chg:#F0B45A; --chg-bg:#3A2B10; --chg-line:#B37A22;
+    --ok:#6FD1A2; --ok-bg:#16332A;
+    --out:#F2918A; --out-bg:#3A1C1A;
+    --inf:#A9BBCD; --inf-bg:#223040;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Vazirmatn","Vazir","IRANSans","Segoe UI",Tahoma,system-ui,sans-serif;
+  font-size:15px; line-height:1.7; padding-bottom:150px;
+}
+button,input,select{font:inherit; color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--brand); outline-offset:2px}
+.wrap{max-width:720px; margin:0 auto; padding:0 14px}
+
+header.top{padding:18px 0 8px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px}
+header.top h1{margin:0; font-size:22px; font-weight:700; line-height:1.4}
+header.top .sub{margin:2px 0 0; color:var(--muted); font-size:13px}
+header.top .sub bdi{direction:ltr}
+
+.btn{
+  height:44px; padding:0 16px; border-radius:10px; border:1px solid var(--line);
+  background:var(--surface); font-weight:600; white-space:nowrap;
+}
+.btn.primary{background:var(--brand); color:var(--brand-ink); border-color:var(--brand)}
+.btn.small{height:38px; padding:0 12px; font-size:14px}
+
+.tools{position:sticky; top:0; z-index:5; background:var(--bg); padding:8px 0 10px}
+.search{
+  width:100%; height:46px; border-radius:10px; border:1px solid var(--line);
+  background:var(--surface); padding:0 14px; font-size:16px;
+}
+.filters{display:flex; gap:8px; margin-top:8px; align-items:center}
+.filters select{
+  flex:1; min-width:0; height:40px; border-radius:10px; border:1px solid var(--line);
+  background:var(--surface); padding:0 10px; font-size:14px;
+}
+.seg{display:flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--surface)}
+.seg button{border:0; background:transparent; height:38px; padding:0 12px; font-size:14px}
+.seg button + button{border-inline-start:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--brand); color:var(--brand-ink); font-weight:700}
+
+#list{background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden}
+.p + .p{border-top:1px solid var(--line)}
+.p.chg{box-shadow:inset 4px 0 0 var(--chg-line)}
+.head{
+  display:block; width:100%; text-align:start; border:0; background:transparent;
+  padding:14px 14px 12px;
+}
+.top-row{display:flex; justify-content:space-between; gap:12px; align-items:flex-start}
+.nm{font-weight:700; font-size:16px; line-height:1.5}
+.pr{display:flex; flex-direction:column; white-space:nowrap; font-variant-numeric:tabular-nums; line-height:1.55; text-align:end}
+.pr .a{font-weight:700}
+.pr .b{font-size:13px; color:var(--muted)}
+.pr small{font-weight:400; color:var(--muted); font-size:12px; margin-inline-end:4px}
+.meta{display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px; margin:2px 0 10px}
+.badge{background:var(--chg-bg); color:var(--chg); border-radius:6px; padding:0 8px; font-size:12px; font-weight:700}
+.strip{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden}
+.cell{flex:1; min-width:0; text-align:center; padding:5px 0 6px; line-height:1.35}
+.cell + .cell{border-inline-start:1px solid var(--line)}
+.cell b{display:block; font-size:14px}
+.cell i{display:block; font-style:normal; font-size:13px}
+.cell.ok{background:var(--ok-bg); color:var(--ok)}
+.cell.out{background:var(--out-bg); color:var(--out)}
+.cell.inf{background:var(--inf-bg); color:var(--inf)}
+.cell.chg{box-shadow:inset 0 -3px 0 var(--chg-line)}
+
+.panel{display:grid; grid-template-rows:0fr; transition:grid-template-rows .2s ease}
+.p.open .panel{grid-template-rows:1fr}
+.panel > .inner{overflow:hidden; min-height:0}
+.p:not(.open) .inner{visibility:hidden}
+.inner-pad{padding:2px 14px 16px; border-top:1px dashed var(--line); margin:0 0 0}
+.row-type{display:flex; align-items:center; justify-content:space-between; gap:12px; padding-top:12px}
+.row-type label,.bulk label{font-weight:600; font-size:14px}
+.row-type select{height:40px; border-radius:8px; border:1px solid var(--line); background:var(--surface); padding:0 10px; min-width:130px; font-size:15px}
+.note{margin:6px 0 0; font-size:13px; color:var(--muted)}
+.bulk{padding-top:14px}
+.bulk-in{display:flex; gap:8px; margin-top:6px}
+.shead,.srow{display:grid; grid-template-columns:40px 1fr 140px; gap:8px; align-items:center}
+.shead{margin-top:14px; font-size:12px; color:var(--muted); padding-bottom:4px}
+.shead span:nth-child(2),.shead span:nth-child(3){text-align:center}
+.srow{padding:6px 0; border-top:1px solid var(--line)}
+.sz{font-weight:700; text-align:center}
+.num{
+  width:100%; height:42px; border-radius:8px; border:1px solid var(--line);
+  background:var(--surface); text-align:center; font-size:16px; padding:0 6px;
+  font-variant-numeric:tabular-nums; min-width:0;
+}
+.num.chg{border-color:var(--chg-line); background:var(--chg-bg); color:var(--chg); font-weight:700}
+.step{display:flex; direction:ltr; gap:6px}
+.step .num{flex:1}
+.sb{width:40px; height:42px; border-radius:8px; border:1px solid var(--line); background:var(--surface); font-size:20px; line-height:1; flex:none}
+.sb:active{background:var(--inf-bg)}
+
+.sizes{margin-top:14px; border-top:1px solid var(--line)}
+.sblock{padding:10px 0}
+.sblock + .sblock{border-top:1px solid var(--line)}
+.line1{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px}
+.line2{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.pf{display:block}
+.pf span{display:block; font-size:12px; color:var(--muted); margin-bottom:2px}
+.bt{font-weight:600; font-size:14px; margin-bottom:6px}
+.apply{width:100%; margin-top:8px}
+.line1 .step{width:152px; flex:none}
+.empty{padding:36px 20px; text-align:center; color:var(--muted)}
+.empty strong{display:block; color:var(--ink); margin-bottom:4px}
+
+#bar{
+  position:fixed; inset-inline:0; bottom:0; z-index:10; background:var(--surface);
+  border-top:1px solid var(--line);
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+}
+#bar .in{max-width:720px; margin:0 auto; display:flex; flex-wrap:wrap; align-items:center; gap:8px}
+#bar .txt{flex:1 1 100%; min-width:0; line-height:1.4}
+#bar .txt strong{font-size:15px; margin-inline-end:8px}
+#bar .txt span{font-size:12px; color:var(--muted)}
+#bar .btn{flex:1; padding:0 8px}
+#toast{
+  position:fixed; inset-inline:14px; top:12px; z-index:20; margin:0 auto; max-width:420px;
+  background:var(--ink); color:var(--bg); padding:10px 14px; border-radius:10px; font-size:14px;
+  text-align:center; opacity:0; transform:translateY(-8px); pointer-events:none;
+  transition:opacity .2s, transform .2s;
+}
+#toast.show{opacity:1; transform:none}
+@media (prefers-reduced-motion: reduce){
+  .panel,#toast{transition:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>قیمت و موجودی</h1>
+      <p class="sub"><bdi>avalchi.ir</bdi> <span id="stats"></span></p>
+      <p class="sub" id="rule"></p>
+    </div>
+    <button class="btn small" id="importBtn" type="button">بارگذاری فایل</button>
+    <input type="file" id="file" accept=".xlsx" hidden>
+  </header>
+
+  <div class="tools">
+    <input class="search" id="q" type="search" placeholder="جستجوی نام یا دسته" aria-label="جستجو">
+    <div class="filters">
+      <select id="cat" aria-label="دسته"></select>
+      <div class="seg" role="group" aria-label="نمایش">
+        <button type="button" data-mode="all" aria-pressed="true">همه</button>
+        <button type="button" data-mode="out" aria-pressed="false">ناموجود</button>
+        <button type="button" data-mode="chg" aria-pressed="false">تغییرکرده</button>
+      </div>
+    </div>
+  </div>
+
+  <main id="list"><div class="empty">در حال بارگذاری…</div></main>
+</div>
+
+<div id="bar" hidden>
+  <div class="in">
+    <div class="txt"><strong id="barTitle"></strong><span>تغییرها در همین مرورگر ذخیره می‌شن؛ برای میکسین خروجی اکسل بگیر</span></div>
+    <button class="btn small" id="undo" type="button">لغو تغییرها</button>
+    <button class="btn small" id="save" type="button">ذخیره تغییرها</button>
+    <button class="btn primary" id="export" type="button">خروجی اکسل</button>
+  </div>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+const DATA0 = {"main": {"name": "همه محصولات", "headers": ["شناسه", "نام", "نام انگلیسی", "شناسه دسته اصلی", "نام دسته اصلی", "شناسه برند", "نام برند", "تنوع", "قیمت (تومان)", "قیمت قبل از تخفیف (تومان)", "موجودی", "نوع موجودی", "فعال بودن", "گارانتی", "پیشنهاد ویژه", "قیمت هر عدد", "تعداد در بسته", "محصول مجازی", "طول", "عرض", "ارتفاع", "وزن", "زمان آماده سازی (روز)", "بارکد", "حداکثر قابل سفارش", "حداقل قابل سفارش", "شناسه کالا", "عنوان سئو", "توضیحات سئو", "قیمت‌گذاری پویا"], "rows": [[118, "کفش اسپرت چرم کد ۸۸", "", 125, "کفش اسپرت مردانه", null, "", 1, 5900000, null, 0, "نامحدود", 1, "None", 0, 5900000, 1, 0, null, null, null, null, 0, "", null, null, "", "کفش اسپرت چرم کد ۸۸", "کفش تمام چرم طبیعی", 0], [117, "بوت مردانه کد ۳۳", "", 158, "کفش بوت مردانه", null, "", 1, 9200000, null, 0, "نامحدود", 1, "None", 0, 9200000, 1, 0, null, null, null, null, 0, "", null, null, "", "بوت مردانه کد ۳۳", "کفش چرم طبیعی کامل", 0], [116, "بوت چرم کد ۳۰", "", 158, "کفش بوت مردانه", null, "", 1, 7969500, 7969500, 0, "نامحدود", 1, "None", 0, 7969500, 1, 0, null, null, null, null, 0, "", null, null, "", "کفش بوت چرم ", "", 0], [83, "کد 202", "", 125, "کفش اسپرت مردانه", null, "", 1, 4180000, 4180000, 5, "ناموجود", 1, "None", 0, 4180000, 1, 0, null, null, null, null, 0, "", null, null, "", "کد 202", "کفش تمام چرم طبیعی داخل آستر  چرم   در سایز ها ۴۰ تا ۴۴ موجود است", 0], [50, "کفش مجلسی مردانه کد ۲۰۰", "", 118, "کفش مجلسی مردانه", null, "", 1, 5723300, 5723300, 0, "نامحدود", 1, "None", 0, 5723300, 1, 0, null, null, null, null, 0, "", null, null, "", "کفش مجلسی مردانه کد ۲۰۰", "کفش  مجلسی مردانه رویه تمام چرم طبیعی داخل آستر زیره pu میباشد و برای پیاده روی بلند مدت خوب است", 0], [49, "کفش مجلسی مردانه کد 35", "", 118, "کفش مجلسی مردانه", null, "", 1, 6255700, 6255700, 1, "محدود", 1, "None", 0, 6255700, 1, 0, null, null, null, 1020, 2, "", null, null, "", "کفش مجلسی مردانه کد 35", "جنس رویه و پشت آن تمام چرم طبیعی هست و داخل آستر چرم طبیعی و زیره pu هست و پاشنه ندارد و یکسره هست  مناسب مجالس مهمانی  تمامی مواد درجه 1 هستند", 0], [48, "کفش زنانه مدل سناتور", "", 82, "کفش مجلسی زنانه", null, "", 1, 3806660, 3806660, 1, "محدود", 1, "None", 0, 3806660, 1, 0, null, null, null, 820, 2, "", null, null, "", "کفش زنانه مدل سناتور", "رویه و پشت چرم صنعتی و زیره pu هست و داخل آستر چرم هست پاشنه 3.5 سانتی متر هست مناسب مجالس و مهمانی تمام مواد درجه 1 هستند", 0], [47, "کفش زنانه مدل دریا", "", 82, "کفش مجلسی زنانه", null, "", 1, 3806660, 3806660, 1, "محدود", 1, "None", 0, 3806660, 1, 0, null, null, null, 920, 2, "", null, null, "", "کفش زنانه مدل دریا", "کفش زنانه مدل دریا  رویه و پشت تمام چرم صنعتی  زیره پیو (pu) است  داخل آستر چرم است تمام مواد درجه 1 هستند  مناسب مجلس و مهمانی", 0], [45, "کفش راحتی مردانه چرم صدرا کد 27", "", 118, "کفش مجلسی مردانه", null, "", 1, 5989500, 5989500, 1, "محدود", 1, "None", 0, 5989500, 1, 0, null, null, null, 870, 7, "", null, null, "", "کفش راحتی مردانه چرم صدرا کد 27", "کفش راحتی و رسمی مردانه چرم طبیعی گاوی در رویه آن و درون و بیرون آن از چرم طبیعی و داخل آن تودوزی دستی است و زیره آن اکیپ است مناسب مجلس و مهمانی وحتی پیاده روی کافیه یکبار تست کنید", 0], [44, "کفش رسمی مردانه چرم صدرا کد 75", "", 118, "کفش مجلسی مردانه", null, "", 1, 5989500, 5989500, 1, "محدود", 1, "None", 0, 5989500, 1, 0, null, null, null, 830, 2, "", null, null, "", "کفش رسمی مردانه چرم صدرا کد 75", "کفش رسمی مردانه چرم طبیعی گاوی در رویه آن و داخل آن تودوزی شده است و زیره آن پیو است با پاشنه 2.5 سانت مناسب مجلس و مهمانی با وزن نسبتا سبک یک انتخاب خوب به حساب میاد", 0], [43, "کفش رسمی مردانه صدرا مدل بندی کد 19", "", 118, "کفش مجلسی مردانه", null, "", 1, 5989500, 5989500, 1, "محدود", 1, "None", 0, 5989500, 1, 0, null, null, null, 830, 1, "", null, null, "", "کفش رسمی مردانه صدرا مدل بندی کد 19", "جنس رویه تمام چرم طبیعی گاوی و پشت آن هم تمام چرم است و زیره آن اکیب است و داخل آن تودوزی شده است و این مدل بندی است و تمام مواد استفاده شده در آن درجه یک هستیند و  مناسب مجالس مهمانی است", 0], [42, "کفش رسمی مردانه صدرا مدل بندی کد 26", "", 118, "کفش مجلسی مردانه", null, "", 1, 6255700, 6255700, 1, "محدود", 1, "None", 0, 6255700, 1, 0, null, null, null, 830, 1, "", null, null, "", "کفش رسمی مردانه صدرا مدل بندی کد 26", "جنس رویه و پشت آن تمام چرم گاوی طبیعی به کار برده شده است و زیره آن اکیب است و داخل آن تودوزی شده است  تمام مواد استفاده شده درجه 1 هستند  مناسب برای مهمانی و مجالس  این مدل بندی است و پاشنه دو و نیم سانتی دارد", 0], [41, "کفش روزمره مردانه صدرا چرم طبیعی", "", 125, "کفش اسپرت مردانه", null, "", 1, 6921200, 6921200, 1, "محدود", 1, "None", 0, 6921200, 1, 0, null, null, null, 890, 2, "", null, null, "", "کفش روزمره مردانه صدرا چرم طبیعی", "کفش روزمره مردانه چرم طبیعی و داخل آن تودوزی شده است با زیره فنس مناسب پیاده روی ها طولانی مدت و تمام مواد درجه یک هستند که باعث میشه پا شما درد نگیره", 0], [40, "کفش پاشنه بلند زنانه مدل ساناز", "", 82, "کفش مجلسی زنانه", null, "", 1, 2795100, 2795100, 1, "محدود", 1, "None", 0, 2795100, 1, 0, null, null, null, 410, 1, "", null, null, "", "کفش پاشنه بلند زنانه مدل ساناز", "کفش پاشنه بلند زنانه با پاشنه سه و نیم سانتی متری  زیره پیو (pu)  رویه و پشت چرم صنعتی درجه 1  داخل استر درجه 1  مناسب مهمانی و مجالس  برای خرید حتما به عکس آخر توجه کنید که سایز ها نوشته شده", 0], [39, "کفش پاشنه بلند زنانه بغل کشی مدل ایلا", "", 82, "کفش مجلسی زنانه", null, "", 1, 2795100, 2795100, 1, "محدود", 1, "None", 0, 2795100, 1, 0, null, null, null, 390, 1, "", null, null, "", "کفش پاشنه بلند زنانه بغل کشی مدل ایلا", "کفش پاشنه بلند زنانه با پاشنه حدود 4 سانتی  مشخصات : رویه و پشت آن چرم صنعتی هست زیره پیو هست داخل آستر کار شده است  تمام مواد درجه یک هستند  مناسب مهمانی و مجالس", 0], [38, "کفش زنانه مدل نگین", "", 82, "کفش مجلسی زنانه", null, "", 0, 3074610, 3074610, 6, "محدود", 1, "None", 0, 3074610, 1, 0, null, null, null, 550, 0, "", null, null, "", "کفش زنانه مدل نگین", "کفش تخت زنانه مدل نگین در رویه و پشت آن چرم صنعتی کار شده است  داخل آن آستر کار شده است  زیره آن پیو (pu) است  تمام مواد به کار رفته درجه 1 هستند  مناسب اداره و پیاده روی", 0], [37, "کفش مجلسی کد 45 صدرا", "", 118, "کفش مجلسی مردانه", null, "", 1, 5976190, 5976190, 1, "محدود", 1, "None", 0, 5976190, 1, 0, null, null, null, 1000, 2, "", null, null, "", "کفش مجلسی کد 45 صدرا", "کفش مردانه مجلسی کد 45 صدرا رویه و پشت تمام چرم طبیعی گاوی  زیره ترمو  داخل آستر چرم طبیعی است  زیره آن کمی سفید هست که تو ویدیو مشخصه و سایه طور کار شده است", 0], [36, "کفش زنانه مدل پریسا", "", 82, "کفش مجلسی زنانه", null, "", 1, 2795100, 2795100, 1, "محدود", 1, "None", 0, 2795100, 1, 0, null, null, null, 530, 1, "", null, null, "", "کفش زنانه مدل پریسا", "کفش پاشنه دار زنانه مدل پریسا  در رویه و پشت آن چرم صنعتی کار شده است  داخل آن آستر کار شده است  زیره آن پیو (pu) است  تمام مواد به کار رفته درجه 1 هستند  مناسب اداره و مجالس هست", 0], [35, "کفش تخت زنانه مدل رز", "", 82, "کفش مجلسی زنانه", null, "", 1, 2795100, 2795100, 1, "ناموجود", 1, "None", 0, 2795100, 1, 0, null, null, null, 500, 1, "", null, null, "", "کفش تخت زنانه مدل رز", "کفش تخت زنانه مدل رز که در رویه و پشت آن چرم صنعتی کار شده است و داخل آستر کار شده است و زیره آن پیو است (pu) است و تمام مواد به کار رفته درجه 1 هستند و مناسب مجالس و مهمانی است  پاشنه آن 2.5 سانتی متر است", 0], [7, "کفش مجلسی مردانه کد 185", "", 118, "کفش مجلسی مردانه", null, "", 1, 6255700, 6255700, 1, "محدود", 1, "None", 0, 6255700, 1, 0, null, null, null, 1070, 1, "", null, null, "", "کفش مجلسی مردانه کد 185", "رویه و پشت تمام چرم طبیعی و زیره ترمو اصل و داخل آستر کار شده است . تمام مواد درجه 1 هستند", 0]]}, "vars": {"name": "محصولات تنوع دار", "headers": ["شناسه محصول", "شناسه تنوع", "نام", "تنوع", "تنوع پیش فرض", "قیمت (تومان)", "قیمت قبل از تخفیف (تومان)", "موجودی", "طول", "عرض", "ارتفاع", "وزن", "زمان آماده سازی (روز)", "بارکد", "شناسه کالا", "قیمت‌گذاری پویا"], "rows": [[7, 1, "کفش مجلسی مردانه کد 185", "40", 1, 6255700, 6255700, 1, null, null, null, 1070, 1, "", "", 0], [7, 2, "کفش مجلسی مردانه کد 185", "41", 0, 6255700, 6255700, 1, null, null, null, 1070, 1, "", "", 0], [7, 3, "کفش مجلسی مردانه کد 185", "42", 0, 6255700, 6255700, 1, null, null, null, 1070, 1, "", "", 0], [7, 4, "کفش مجلسی مردانه کد 185", "43", 0, 6255700, 6255700, 1, null, null, null, 1070, 1, "", "", 0], [7, 5, "کفش مجلسی مردانه کد 185", "44", 0, 6255700, 6255700, 1, null, null, null, 1070, 1, "", "", 0], [35, 6, "کفش تخت زنانه مدل رز", "36", 1, 2795100, 2795100, 1, null, null, null, 500, 1, "", "", 0], [35, 7, "کفش تخت زنانه مدل رز", "37", 0, 2795100, 2795100, 1, null, null, null, 500, 1, "", "", 0], [35, 8, "کفش تخت زنانه مدل رز", "38", 0, 2795100, 2795100, 1, null, null, null, 500, 1, "", "", 0], [35, 9, "کفش تخت زنانه مدل رز", "39", 0, 2795100, 2795100, 1, null, null, null, 500, 1, "", "", 0], [35, 10, "کفش تخت زنانه مدل رز", "40", 0, 2795100, 2795100, 1, null, null, null, 500, 1, "", "", 0], [35, 11, "کفش تخت زنانه مدل رز", "41", 0, 2795100, 2795100, 1, null, null, null, 500, 1, "", "", 0], [36, 12, "کفش زنانه مدل پریسا", "36", 1, 2795100, 2795100, 1, null, null, null, 530, 1, "", "", 0], [36, 13, "کفش زنانه مدل پریسا", "37", 0, 2795100, 2795100, 1, null, null, null, 530, 1, "", "", 0], [36, 14, "کفش زنانه مدل پریسا", "38", 0, 2795100, 2795100, 1, null, null, null, 530, 1, "", "", 0], [36, 15, "کفش زنانه مدل پریسا", "39", 0, 2795100, 2795100, 1, null, null, null, 530, 1, "", "", 0], [36, 16, "کفش زنانه مدل پریسا", "40", 0, 2795100, 2795100, 1, null, null, null, 530, 1, "", "", 0], [36, 17, "کفش زنانه مدل پریسا", "41", 0, 2795100, 2795100, 1, null, null, null, 530, 1, "", "", 0], [37, 18, "کفش مجلسی کد 45 صدرا", "40", 1, 5976190, 5976190, 1, null, null, null, 1000, 2, "", "", 0], [37, 19, "کفش مجلسی کد 45 صدرا", "41", 0, 5976190, 5976190, 1, null, null, null, 1000, 2, "", "", 0], [37, 20, "کفش مجلسی کد 45 صدرا", "42", 0, 5976190, 5976190, 1, null, null, null, 1000, 2, "", "", 0], [37, 21, "کفش مجلسی کد 45 صدرا", "43", 0, 5976190, 5976190, 1, null, null, null, 1000, 2, "", "", 0], [37, 22, "کفش مجلسی کد 45 صدرا", "44", 0, 5976190, 5976190, 1, null, null, null, 1000, 2, "", "", 0], [39, 29, "کفش پاشنه بلند زنانه بغل کشی مدل ایلا", "36", 1, 2795100, 2795100, 1, null, null, null, 390, 1, "", "", 0], [39, 30, "کفش پاشنه بلند زنانه بغل کشی مدل ایلا", "37", 0, 2795100, 2795100, 1, null, null, null, 390, 1, "", "", 0], [39, 31, "کفش پاشنه بلند زنانه بغل کشی مدل ایلا", "38", 0, 2795100, 2795100, 1, null, null, null, 390, 1, "", "", 0], [39, 32, "کفش پاشنه بلند زنانه بغل کشی مدل ایلا", "39", 0, 2795100, 2795100, 1, null, null, null, 390, 1, "", "", 0], [39, 33, "کفش پاشنه بلند زنانه بغل کشی مدل ایلا", "40", 0, 2795100, 2795100, 1, null, null, null, 390, 1, "", "", 0], [39, 34, "کفش پاشنه بلند زنانه بغل کشی مدل ایلا", "41", 0, 2795100, 2795100, 1, null, null, null, 390, 1, "", "", 0], [40, 35, "کفش پاشنه بلند زنانه مدل ساناز", "36", 1, 2795100, 2795100, 1, null, null, null, 410, 1, "", "", 0], [40, 36, "کفش پاشنه بلند زنانه مدل ساناز", "37", 0, 2795100, 2795100, 1, null, null, null, 410, 1, "", "", 0], [40, 37, "کفش پاشنه بلند زنانه مدل ساناز", "38", 0, 2795100, 2795100, 1, null, null, null, 410, 1, "", "", 0], [40, 38, "کفش پاشنه بلند زنانه مدل ساناز", "39", 0, 2795100, 2795100, 1, null, null, null, 410, 1, "", "", 0], [40, 39, "کفش پاشنه بلند زنانه مدل ساناز", "40", 0, 2795100, 2795100, 1, null, null, null, 410, 1, "", "", 0], [40, 40, "کفش پاشنه بلند زنانه مدل ساناز", "41", 0, 2795100, 2795100, 1, null, null, null, 410, 1, "", "", 0], [41, 41, "کفش روزمره مردانه صدرا چرم طبیعی", "44", 1, 6921200, 6921200, 1, null, null, null, 890, 2, "", "", 0], [41, 42, "کفش روزمره مردانه صدرا چرم طبیعی", "40", 0, 6921200, 6921200, 0, null, null, null, 890, 2, "", "", 0], [41, 43, "کفش روزمره مردانه صدرا چرم طبیعی", "41", 0, 6921200, 6921200, 0, null, null, null, 890, 2, "", "", 0], [41, 44, "کفش روزمره مردانه صدرا چرم طبیعی", "42", 0, 6921200, 6921200, 0, null, null, null, 890, 2, "", "", 0], [41, 45, "کفش روزمره مردانه صدرا چرم طبیعی", "43", 0, 6921200, 6921200, 0, null, null, null, 890, 2, "", "", 0], [42, 46, "کفش رسمی مردانه صدرا مدل بندی کد 26", "40", 1, 6255700, 6255700, 1, null, null, null, 830, 1, "", "", 0], [42, 47, "کفش رسمی مردانه صدرا مدل بندی کد 26", "41", 0, 6255700, 6255700, 1, null, null, null, 830, 1, "", "", 0], [42, 48, "کفش رسمی مردانه صدرا مدل بندی کد 26", "42", 0, 6255700, 6255700, 1, null, null, null, 830, 1, "", "", 0], [42, 49, "کفش رسمی مردانه صدرا مدل بندی کد 26", "43", 0, 6255700, 6255700, 1, null, null, null, 830, 1, "", "", 0], [42, 50, "کفش رسمی مردانه صدرا مدل بندی کد 26", "44", 0, 6255700, 6255700, 1, null, null, null, 830, 1, "", "", 0], [43, 51, "کفش رسمی مردانه صدرا مدل بندی کد 19", "40", 1, 5989500, 5989500, 1, null, null, null, 830, 1, "", "", 0], [43, 52, "کفش رسمی مردانه صدرا مدل بندی کد 19", "42", 0, 5989500, 5989500, 1, null, null, null, 830, 1, "", "", 0], [43, 53, "کفش رسمی مردانه صدرا مدل بندی کد 19", "43", 0, 5989500, 5989500, 1, null, null, null, 830, 1, "", "", 0], [43, 54, "کفش رسمی مردانه صدرا مدل بندی کد 19", "44", 0, 5989500, 5989500, 1, null, null, null, 830, 1, "", "", 0], [43, 55, "کفش رسمی مردانه صدرا مدل بندی کد 19", "41", 0, 5989500, 5989500, 1, null, null, null, 830, 1, "", "", 0], [44, 56, "کفش رسمی مردانه چرم صدرا کد 75", "40", 1, 5989500, 5989500, 1, null, null, null, 830, 2, "", "", 0], [44, 57, "کفش رسمی مردانه چرم صدرا کد 75", "41", 0, 5989500, 5989500, 1, null, null, null, 830, 2, "", "", 0], [44, 58, "کفش رسمی مردانه چرم صدرا کد 75", "42", 0, 5989500, 5989500, 1, null, null, null, 830, 2, "", "", 0], [44, 59, "کفش رسمی مردانه چرم صدرا کد 75", "43", 0, 5989500, 5989500, 1, null, null, null, 830, 2, "", "", 0], [44, 60, "کفش رسمی مردانه چرم صدرا کد 75", "44", 0, 5989500, 5989500, 1, null, null, null, 830, 2, "", "", 0], [45, 61, "کفش راحتی مردانه چرم صدرا کد 27", "40", 1, 5989500, 5989500, 1, null, null, null, 870, 7, "", "", 0], [45, 62, "کفش راحتی مردانه چرم صدرا کد 27", "41", 0, 5989500, 5989500, 1, null, null, null, 870, 7, "", "", 0], [45, 63, "کفش راحتی مردانه چرم صدرا کد 27", "42", 0, 5989500, 5989500, 1, null, null, null, 870, 7, "", "", 0], [45, 64, "کفش راحتی مردانه چرم صدرا کد 27", "43", 0, 5989500, 5989500, 1, null, null, null, 870, 7, "", "", 0], [45, 65, "کفش راحتی مردانه چرم صدرا کد 27", "44", 0, 5989500, 5989500, 1, null, null, null, 870, 7, "", "", 0], [47, 66, "کفش زنانه مدل دریا", "36", 1, 3806660, 3806660, 1, null, null, null, 920, 2, "", "", 0], [47, 67, "کفش زنانه مدل دریا", "37", 0, 3806660, 3806660, 1, null, null, null, 920, 2, "", "", 0], [47, 68, "کفش زنانه مدل دریا", "38", 0, 3806660, 3806660, 1, null, null, null, 920, 2, "", "", 0], [47, 69, "کفش زنانه مدل دریا", "39", 0, 3806660, 3806660, 1, null, null, null, 920, 2, "", "", 0], [47, 70, "کفش زنانه مدل دریا", "40", 0, 3806660, 3806660, 1, null, null, null, 920, 2, "", "", 0], [47, 71, "کفش زنانه مدل دریا", "41", 0, 3806660, 3806660, 1, null, null, null, 920, 2, "", "", 0], [48, 72, "کفش زنانه مدل سناتور", "36", 1, 3806660, 3806660, 1, null, null, null, 820, 2, "", "", 0], [48, 73, "کفش زنانه مدل سناتور", "37", 0, 3806660, 3806660, 1, null, null, null, 820, 2, "", "", 0], [48, 74, "کفش زنانه مدل سناتور", "38", 0, 3806660, 3806660, 1, null, null, null, 820, 2, "", "", 0], [48, 75, "کفش زنانه مدل سناتور", "39", 0, 3806660, 3806660, 1, null, null, null, 820, 2, "", "", 0], [48, 76, "کفش زنانه مدل سناتور", "40", 0, 3806660, 3806660, 1, null, null, null, 820, 2, "", "", 0], [48, 77, "کفش زنانه مدل سناتور", "41", 0, 3806660, 3806660, 1, null, null, null, 820, 2, "", "", 0], [49, 78, "کفش مجلسی مردانه کد 35", "40", 1, 6255700, 6255700, 1, null, null, null, 1020, 2, "", "", 0], [49, 79, "کفش مجلسی مردانه کد 35", "41", 0, 6255700, 6255700, 1, null, null, null, 1020, 2, "", "", 0], [49, 80, "کفش مجلسی مردانه کد 35", "42", 0, 6255700, 6255700, 1, null, null, null, 1020, 2, "", "", 0], [49, 81, "کفش مجلسی مردانه کد 35", "43", 0, 6255700, 6255700, 1, null, null, null, 1020, 2, "", "", 0], [49, 82, "کفش مجلسی مردانه کد 35", "44", 0, 6255700, 6255700, 1, null, null, null, 1020, 2, "", "", 0], [50, 83, "کفش مجلسی مردانه کد ۲۰۰", "۴۰", 1, 5723300, 5723300, 0, null, null, null, null, 0, "", "", 0], [50, 84, "کفش مجلسی مردانه کد ۲۰۰", "۴۱", 0, 5723300, 5723300, 0, null, null, null, null, 0, "", "", 0], [50, 85, "کفش مجلسی مردانه کد ۲۰۰", "۴۲", 0, 5723300, 5723300, 0, null, null, null, null, 0, "", "", 0], [50, 86, "کفش مجلسی مردانه کد ۲۰۰", "۴۳", 0, 5723300, 5723300, 0, null, null, null, null, 0, "", "", 0], [50, 87, "کفش مجلسی مردانه کد ۲۰۰", "۴۴", 0, 5723300, 5723300, 0, null, null, null, null, 0, "", "", 0], [83, 116, "کد 202", "۴۰", 1, 4180000, 4180000, 5, null, null, null, null, 0, "", "", 0], [83, 117, "کد 202", "۴۱", 0, 4180000, 4180000, 5, null, null, null, null, 0, "", "", 0], [83, 118, "کد 202", "۴۲", 0, 4180000, 4180000, 5, null, null, null, null, 0, "", "", 0], [83, 119, "کد 202", "۴۳", 0, 4180000, 4180000, 5, null, null, null, null, 0, "", "", 0], [83, 120, "کد 202", "۴۴", 0, 4180000, 4180000, 5, null, null, null, null, 0, "", "", 0], [116, 154, "بوت چرم کد ۳۰", "40", 1, 7969500, 7969500, 0, null, null, null, null, 0, "", "", 0], [116, 155, "بوت چرم کد ۳۰", "41", 0, 7969500, 7969500, 0, null, null, null, null, 0, "", "", 0], [116, 156, "بوت چرم کد ۳۰", "42", 0, 7969500, 7969500, 0, null, null, null, null, 0, "", "", 0], [116, 157, "بوت چرم کد ۳۰", "43", 0, 7969500, 7969500, 0, null, null, null, null, 0, "", "", 0], [116, 158, "بوت چرم کد ۳۰", "44", 0, 7969500, 7969500, 0, null, null, null, null, 0, "", "", 0], [117, 159, "بوت مردانه کد ۳۳", "۴۰", 1, 9200000, null, 0, null, null, null, null, 0, "", "", 0], [117, 160, "بوت مردانه کد ۳۳", "۴۱", 0, 9200000, null, 0, null, null, null, null, 0, "", "", 0], [117, 161, "بوت مردانه کد ۳۳", "۴۲", 0, 9200000, null, 0, null, null, null, null, 0, "", "", 0], [117, 162, "بوت مردانه کد ۳۳", "۴۳", 0, 9200000, null, 0, null, null, null, null, 0, "", "", 0], [117, 163, "بوت مردانه کد ۳۳", "۴۴", 0, 9200000, null, 0, null, null, null, null, 0, "", "", 0], [118, 164, "کفش اسپرت چرم کد ۸۸", "40", 1, 5900000, null, 0, null, null, null, null, 0, "", "", 0], [118, 165, "کفش اسپرت چرم کد ۸۸", "41", 0, 5900000, null, 0, null, null, null, null, 0, "", "", 0], [118, 166, "کفش اسپرت چرم کد ۸۸", "42", 0, 5900000, null, 0, null, null, null, null, 0, "", "", 0], [118, 167, "کفش اسپرت چرم کد ۸۸", "43", 0, 5900000, null, 0, null, null, null, null, 0, "", "", 0], [118, 168, "کفش اسپرت چرم کد ۸۸", "44", 0, 5900000, null, 0, null, null, null, null, 0, "", "", 0]]}};
+const SHEETS = {main: DATA0.main.name, vars: DATA0.vars.name};
+const FA='۰۱۲۳۴۵۶۷۸۹', AR='٠١٢٣٤٥٦٧٨٩';
+const latin = s => String(s).replace(/[۰-۹]/g,d=>FA.indexOf(d)).replace(/[٠-٩]/g,d=>AR.indexOf(d));
+const faDigits = s => String(s).replace(/\d/g,d=>FA[d]);
+const nf = new Intl.NumberFormat('fa-IR');
+const fmt = n => nf.format(n);
+const parseNum = s => { const t = latin(s).replace(/[^0-9]/g,''); return t==='' ? null : parseInt(t,10); };
+const norm = s => latin(s).replace(/ي/g,'ی').replace(/ك/g,'ک').toLowerCase();
+const OFF = 0.14; // قیمت اصلی = ۱۴٪ کمتر از قیمت ترب‌پی
+const mainOf = n => Math.round(n*(1-OFF));
+const torobOf = n => Math.round(n/(1-OFF));
+const clone = o => JSON.parse(JSON.stringify(o));
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $ = s => document.querySelector(s);
+
+const list=$('#list'), bar=$('#bar'), toastEl=$('#toast');
+let data, baseData, cm, cv, products=[], byId=new Map(), baseMain=new Map(), baseVar=new Map();
+let open=new Set(), q='', cat='', mode='all';
+
+function setup(d, b){
+  const hm=d.main.headers, hv=d.vars.headers, ix=(h,n)=>h.indexOf(n);
+  const m={id:ix(hm,'شناسه'),name:ix(hm,'نام'),cat:ix(hm,'نام دسته اصلی'),price:ix(hm,'قیمت (تومان)'),stock:ix(hm,'موجودی'),type:ix(hm,'نوع موجودی'),unit:ix(hm,'قیمت هر عدد')};
+  const v={pid:ix(hv,'شناسه محصول'),vid:ix(hv,'شناسه تنوع'),size:ix(hv,'تنوع'),def:ix(hv,'تنوع پیش فرض'),price:ix(hv,'قیمت (تومان)'),stock:ix(hv,'موجودی')};
+  if([m.id,m.name,m.price,m.stock,m.type].some(i=>i<0) || (d.vars.rows.length && [v.pid,v.vid,v.size,v.price,v.stock].some(i=>i<0)))
+    throw new Error('ستون‌های لازم در فایل پیدا نشد');
+  data=d; baseData=b||clone(d); cm=m; cv=v;
+  baseMain=new Map(baseData.main.rows.map(r=>[r[cm.id],r]));
+  baseVar=new Map(baseData.vars.rows.map(r=>[r[cv.vid],r]));
+  const g=new Map();
+  data.vars.rows.forEach(r=>{const k=r[cv.pid]; if(!g.has(k)) g.set(k,[]); g.get(k).push(r);});
+  products=data.main.rows.map(r=>({id:r[cm.id],row:r,vrows:g.get(r[cm.id])||[]}));
+  byId=new Map(products.map(p=>[String(p.id),p]));
+}
+
+const typeOf = p => p.row[cm.type] || 'محدود';
+const stateOf = (p,stock) => { const t=typeOf(p); if(t==='ناموجود') return 'out'; if(t==='نامحدود') return 'inf'; return stock>0?'ok':'out'; };
+const sizeNum = v => parseInt(latin(v[cv.size]),10) || 0;
+const sorted = p => p.vrows.slice().sort((a,b)=>sizeNum(a)-sizeNum(b));
+const prices = p => p.vrows.length ? p.vrows.map(v=>v[cv.price]) : [p.row[cm.price]];
+
+const vPriceChg = v => { const b=baseVar.get(v[cv.vid]); return !b || b[cv.price]!==v[cv.price]; };
+const vStockChg = v => { const b=baseVar.get(v[cv.vid]); return !b || b[cv.stock]!==v[cv.stock]; };
+const vChg = v => vPriceChg(v)||vStockChg(v);
+const mPriceChg = p => { const b=baseMain.get(p.id); return !b || b[cm.price]!==p.row[cm.price]; };
+const mStockChg = p => { const b=baseMain.get(p.id); return !b || b[cm.stock]!==p.row[cm.stock]; };
+const mChg = p => { const b=baseMain.get(p.id); if(!b) return true; if(b[cm.type]!==p.row[cm.type]) return true; return p.vrows.length ? false : (mPriceChg(p)||mStockChg(p)); };
+const pChg = p => mChg(p) || p.vrows.some(vChg);
+
+function syncMain(p){
+  if(!p.vrows.length) return;
+  const d = p.vrows.find(v=>v[cv.def]==1) || p.vrows[0];
+  p.row[cm.price]=d[cv.price];
+  if(cm.unit>=0) p.row[cm.unit]=d[cv.price];
+  p.row[cm.stock]=d[cv.stock];
+}
+
+function stripHTML(p){
+  if(!p.vrows.length){
+    const s=p.row[cm.stock], st=stateOf(p,s);
+    return `<span class="cell ${st}${mChg(p)?' chg':''}"><b>بدون سایز</b><i>${st==='inf'?'∞':fmt(s)}</i></span>`;
+  }
+  return sorted(p).map(v=>{
+    const s=v[cv.stock]||0, st=stateOf(p,s);
+    return `<span class="cell ${st}${vChg(v)?' chg':''}"><b>${faDigits(latin(v[cv.size]))}</b><i>${st==='inf'?'∞':fmt(s)}</i></span>`;
+  }).join('');
+}
+
+function numInput(f,val,label,chg,extra){
+  return `<input class="num${chg?' chg':''}" inputmode="numeric" autocomplete="off" data-f="${f}" ${extra||''} value="${val==null?'':fmt(val)}" aria-label="${esc(label)}">`;
+}
+
+function pf(label,f,val,aria,chg,extra){ return `<label class="pf"><span>${label}</span>${numInput(f,val,aria,chg,extra)}</label>`; }
+function stepHTML(f,val,aria,chg,vid){
+  const dv = vid!=null ? ` data-v="${vid}"` : '';
+  return `<div class="step"><button class="sb" type="button" data-act="dec"${dv} aria-label="کم کردن">−</button>${numInput(f,val,aria,chg,dv)}<button class="sb" type="button" data-act="inc"${dv} aria-label="زیاد کردن">+</button></div>`;
+}
+function panelHTML(p){
+  const t=typeOf(p), opts=['محدود','نامحدود','ناموجود']; if(!opts.includes(t)) opts.push(t);
+  const note = t==='نامحدود' ? 'همیشه قابل خرید است و تعداد نادیده گرفته می‌شود.'
+             : t==='ناموجود' ? 'محصول ناموجود نمایش داده می‌شود و تعداد نادیده گرفته می‌شود.' : '';
+  let h=`<div class="inner-pad"><div class="row-type"><label for="t${p.id}">وضعیت موجودی</label><select id="t${p.id}" data-f="type">${opts.map(o=>`<option${o===t?' selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
+  if(note) h+=`<p class="note">${note}</p>`;
+  if(p.vrows.length){
+    h+=`<div class="bulk"><div class="bt">قیمت همه سایزها (تومان)</div><div class="line2">${pf('قیمت اصلی','bulkMain',null,'قیمت اصلی همه سایزها',false,'placeholder="قیمت جدید"')}${pf('ترب‌پی','bulkTorob',null,'قیمت ترب‌پی همه سایزها',false,'placeholder="قیمت جدید"')}</div><button class="btn apply" type="button" data-act="bulk">اعمال روی همه سایزها</button></div>`;
+    h+=`<div class="sizes">`+sorted(p).map(v=>{
+      const sz=faDigits(latin(v[cv.size])), id=v[cv.vid], pc=vPriceChg(v), pr=v[cv.price];
+      return `<div class="sblock"><div class="line1"><span class="sz">سایز ${sz}</span>${stepHTML('vstock',v[cv.stock]||0,'تعداد سایز '+sz,vStockChg(v),id)}</div><div class="line2">${pf('قیمت اصلی','vmain',mainOf(pr),'قیمت اصلی سایز '+sz,pc,`data-v="${id}"`)}${pf('ترب‌پی','vtorob',pr,'قیمت ترب‌پی سایز '+sz,pc,`data-v="${id}"`)}</div></div>`;
+    }).join('')+`</div>`;
+  } else {
+    const pr=p.row[cm.price], pc=mPriceChg(p);
+    h+=`<div class="sizes"><div class="sblock"><div class="line1"><span class="sz">تعداد</span>${stepHTML('mstock',p.row[cm.stock]||0,'تعداد',mStockChg(p),null)}</div><div class="line2">${pf('قیمت اصلی','mmain',mainOf(pr),'قیمت اصلی',pc,'')}${pf('ترب‌پی','mtorob',pr,'قیمت ترب‌پی',pc,'')}</div></div></div>`;
+  }
+  return h+'</div>';
+}
+
+function prodHTML(p){
+  const k=String(p.id), isOpen=open.has(k), ch=pChg(p), ps=prices(p), lo=Math.min(...ps), hi=Math.max(...ps);
+  const pre = lo===hi ? '' : 'از ';
+  const priceText = `<span class="a"><small>اصلی</small>${pre}${fmt(mainOf(lo))}</span><span class="b"><small>ترب‌پی</small>${pre}${fmt(lo)}</span>`;
+  return `<article class="p${isOpen?' open':''}${ch?' chg':''}" data-id="${esc(k)}">
+    <button class="head" type="button" data-act="toggle" aria-expanded="${isOpen}">
+      <span class="top-row"><span class="nm">${esc(p.row[cm.name])}</span><span class="pr">${priceText}</span></span>
+      <span class="meta"><span>${esc(p.row[cm.cat]||'')}</span>${ch?'<span class="badge">تغییر کرده</span>':''}</span>
+      <span class="strip">${stripHTML(p)}</span>
+    </button>
+    <div class="panel"><div class="inner">${panelHTML(p)}</div></div>
+  </article>`;
+}
+
+function visible(p){
+  if(cat && p.row[cm.cat]!==cat) return false;
+  if(q){ const hay=norm((p.row[cm.name]||'')+' '+(p.row[cm.cat]||'')); if(!hay.includes(norm(q))) return false; }
+  if(mode==='out') return p.vrows.length ? p.vrows.some(v=>stateOf(p,v[cv.stock]||0)==='out') : stateOf(p,p.row[cm.stock]||0)==='out';
+  if(mode==='chg') return pChg(p);
+  return true;
+}
+
+function renderCats(){
+  const cats=[...new Set(products.map(p=>p.row[cm.cat]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'fa'));
+  const sel=$('#cat');
+  sel.innerHTML='<option value="">همه دسته‌ها</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  sel.value=cats.includes(cat)?cat:''; cat=sel.value;
+}
+
+function updateStats(){
+  let sizes=0, out=0;
+  products.forEach(p=>{
+    const rows=p.vrows.length?p.vrows.map(v=>v[cv.stock]||0):[p.row[cm.stock]||0];
+    if(p.vrows.length) sizes+=rows.length;
+    rows.forEach(s=>{ if(stateOf(p,s)==='out') out++; });
+  });
+  $('#stats').textContent = `${fmt(products.length)} محصول، ${fmt(sizes)} سایز، ${fmt(out)} ناموجود`;
+}
+
+function updateBar(){
+  const n=products.filter(pChg).length;
+  bar.hidden = n===0;
+  $('#barTitle').textContent = `${fmt(n)} محصول تغییر کرده`;
+  updateStats();
+}
+
+function renderAll(){
+  const vis=products.filter(visible);
+  if(vis.length){ list.innerHTML=vis.map(prodHTML).join(''); }
+  else if(mode==='chg'){ list.innerHTML='<div class="empty"><strong>هنوز چیزی تغییر نکرده</strong>یک محصول را باز کن و قیمت یا تعداد را عوض کن.</div>'; }
+  else { list.innerHTML='<div class="empty"><strong>محصولی پیدا نشد</strong>جستجو یا فیلتر را عوض کن.</div>'; }
+  updateBar();
+}
+
+function rerender(p){
+  const el=list.querySelector(`.p[data-id="${String(p.id).replace(/"/g,'')}"]`);
+  if(el) el.outerHTML=prodHTML(p);
+}
+function commit(p){ rerender(p); updateBar(); persist(); }
+
+let toastT;
+function toast(msg){ toastEl.textContent=msg; toastEl.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>toastEl.classList.remove('show'),3200); }
+
+const KEY='avalchi-state-v2';
+let saveT;
+async function writeState(){
+  const json=JSON.stringify({data,baseData});
+  let ok=false;
+  try{ if(window.storage){ await window.storage.set(KEY,json,false); ok=true; } }catch(e){}
+  if(!ok){ try{ localStorage.setItem(KEY,json); ok=true; }catch(e){} }
+  return ok;
+}
+function persist(){ clearTimeout(saveT); saveT=setTimeout(writeState,300); }
+async function saveNow(){
+  clearTimeout(saveT);
+  const ok=await writeState();
+  const time=new Date().toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'});
+  toast(ok ? `تغییرها ذخیره شد (ساعت ${time})` : 'ذخیره نشد؛ مرورگر اجازه‌ی ذخیره نمی‌دهد');
+}
+async function restore(){
+  try{ if(window.storage){ const r=await window.storage.get(KEY,false); if(r&&r.value) return JSON.parse(r.value); } }catch(e){}
+  try{ const s=localStorage.getItem(KEY); if(s) return JSON.parse(s); }catch(e){}
+  return null;
+}
+function applyPreset(){
+  products.forEach(p=>{
+    p.row[cm.type]='محدود';
+    if(p.vrows.length){ p.vrows.forEach(v=>v[cv.stock]=1); syncMain(p); }
+    else p.row[cm.stock]=1;
+  });
+}
+
+function findV(p,id){ return p.vrows.find(v=>String(v[cv.vid])===String(id)); }
+function setAllPrices(p,n){
+  if(p.vrows.length){ p.vrows.forEach(v=>v[cv.price]=n); syncMain(p); }
+  else { p.row[cm.price]=n; if(cm.unit>=0) p.row[cm.unit]=n; }
+}
+function applyBulk(art,p){
+  let n=parseNum(art.querySelector('[data-f="bulkTorob"]').value);
+  if(n==null){ const m=parseNum(art.querySelector('[data-f="bulkMain"]').value); if(m!=null) n=torobOf(m); }
+  if(n==null){ toast('قیمت را وارد کن'); return; }
+  setAllPrices(p,n); commit(p);
+}
+
+list.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]'); if(!b) return;
+  const art=b.closest('.p'); if(!art) return;
+  const p=byId.get(art.dataset.id); if(!p) return;
+  const act=b.dataset.act;
+  if(act==='toggle'){ const k=String(p.id); open.has(k)?open.delete(k):open.add(k); rerender(p); return; }
+  if(act==='bulk'){ applyBulk(art,p); return; }
+  if(act==='inc'||act==='dec'){
+    const d=act==='inc'?1:-1;
+    if(b.dataset.v){ const v=findV(p,b.dataset.v); if(!v) return; v[cv.stock]=Math.max(0,Math.min(99999,(v[cv.stock]||0)+d)); syncMain(p); }
+    else { p.row[cm.stock]=Math.max(0,Math.min(99999,(p.row[cm.stock]||0)+d)); }
+    commit(p);
+  }
+});
+list.addEventListener('change',e=>{
+  const el=e.target.closest('[data-f]'); if(!el) return;
+  const art=el.closest('.p'); const p=art && byId.get(art.dataset.id); if(!p) return;
+  const f=el.dataset.f;
+  if(f==='bulkMain'||f==='bulkTorob') return;
+  if(f==='type'){ p.row[cm.type]=el.value; commit(p); return; }
+  const n=parseNum(el.value);
+  if(n==null){ rerender(p); return; }
+  if(f==='vmain'||f==='vtorob'||f==='vstock'){
+    const v=findV(p,el.dataset.v); if(!v){ rerender(p); return; }
+    if(f==='vstock') v[cv.stock]=n; else v[cv.price]=(f==='vmain'?torobOf(n):n);
+    syncMain(p);
+  } else if(f==='mmain'||f==='mtorob'){
+    const price=(f==='mmain'?torobOf(n):n);
+    p.row[cm.price]=price; if(cm.unit>=0) p.row[cm.unit]=price;
+  } else if(f==='mstock'){ p.row[cm.stock]=n; }
+  commit(p);
+});
+list.addEventListener('keydown',e=>{
+  if(e.key!=='Enter') return;
+  const el=e.target.closest('[data-f]'); if(!el) return;
+  e.preventDefault();
+  if(el.dataset.f==='bulkMain'||el.dataset.f==='bulkTorob'){ const art=el.closest('.p'); applyBulk(art,byId.get(art.dataset.id)); }
+  else el.blur();
+});
+list.addEventListener('input',e=>{
+  const el=e.target, f=el.dataset && el.dataset.f;
+  if(f!=='bulkMain' && f!=='bulkTorob') return;
+  const art=el.closest('.p'); if(!art) return;
+  const other=art.querySelector(f==='bulkMain'?'[data-f="bulkTorob"]':'[data-f="bulkMain"]');
+  const n=parseNum(el.value);
+  other.value = n==null ? '' : fmt(f==='bulkMain' ? torobOf(n) : mainOf(n));
+});
+list.addEventListener('focusin',e=>{ if(e.target.matches && e.target.matches('input.num')) setTimeout(()=>e.target.select(),0); });
+
+$('#q').addEventListener('input',e=>{ q=e.target.value.trim(); renderAll(); });
+$('#cat').addEventListener('change',e=>{ cat=e.target.value; renderAll(); });
+document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{
+  mode=b.dataset.mode;
+  document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  renderAll();
+}));
+
+$('#save').addEventListener('click',saveNow);
+
+let undoArmed=false, undoT;
+$('#undo').addEventListener('click',()=>{
+  const btn=$('#undo');
+  if(!undoArmed){ undoArmed=true; btn.textContent='تأیید لغو'; undoT=setTimeout(()=>{undoArmed=false; btn.textContent='لغو تغییرها';},3500); return; }
+  clearTimeout(undoT); undoArmed=false; btn.textContent='لغو تغییرها';
+  setup(clone(baseData), clone(baseData)); renderAll(); persist(); toast('تغییرها لغو شد');
+});
+
+let importArmed=false, importT;
+$('#importBtn').addEventListener('click',()=>{
+  if(products.some(pChg) && !importArmed){
+    importArmed=true; toast('تغییرهای فعلی با فایل جدید جایگزین می‌شن. برای ادامه دوباره بزن');
+    importT=setTimeout(()=>importArmed=false,4000); return;
+  }
+  clearTimeout(importT); importArmed=false; $('#file').click();
+});
+$('#file').addEventListener('change',async e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  if(!window.XLSX){ toast('کتابخانه اکسل بارگذاری نشد؛ اتصال اینترنت را بررسی کن'); return; }
+  try{
+    const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+    const names=wb.SheetNames;
+    const mainName=names.includes(SHEETS.main)?SHEETS.main:names[0];
+    const varName=names.includes(SHEETS.vars)?SHEETS.vars:names[1];
+    const read=n=>n?XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:null,raw:true}):[];
+    const build=(n,fallbackHeaders)=>{
+      const a=read(n), h=a[0]||fallbackHeaders;
+      const rows=a.slice(1).filter(r=>r.some(c=>c!==null)).map(r=>{ r=r.slice(); while(r.length<h.length) r.push(null); return r; });
+      return {name:n||'', headers:h, rows};
+    };
+    const d={main:build(mainName,[]), vars:build(varName,DATA0.vars.headers)};
+    if(!varName) d.vars.name=SHEETS.vars;
+    setup(d);
+    open.clear(); q=''; $('#q').value=''; cat=''; mode='all';
+    document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.mode==='all')));
+    renderCats(); renderAll(); persist();
+    toast(`${fmt(products.length)} محصول بارگذاری شد`);
+  }catch(err){
+    console.error(err);
+    toast(err && err.message ? err.message : 'خواندن فایل ناموفق بود');
+  }
+});
+
+$('#export').addEventListener('click',()=>{
+  if(!window.XLSX){ toast('کتابخانه اکسل بارگذاری نشد؛ اتصال اینترنت را بررسی کن'); return; }
+  try{
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([data.main.headers,...data.main.rows]),data.main.name||SHEETS.main);
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([data.vars.headers,...data.vars.rows]),data.vars.name||SHEETS.vars);
+    wb.Workbook={Views:[{RTL:true}]};
+    const out=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+    const blob=new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const t=new Date(), z=n=>String(n).padStart(2,'0');
+    const name=`products_${t.getFullYear()}${z(t.getMonth()+1)}${z(t.getDate())}_${z(t.getHours())}${z(t.getMinutes())}${z(t.getSeconds())}.xlsx`;
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    toast('فایل اکسل ساخته شد');
+  }catch(err){ console.error(err); toast('ساخت فایل اکسل ناموفق بود'); }
+});
+
+(async()=>{
+  const st=await restore();
+  let fresh=false;
+  try{ if(st && st.data && st.baseData) setup(st.data,st.baseData); else { setup(clone(DATA0)); fresh=true; } }
+  catch(e){ setup(clone(DATA0)); fresh=true; }
+  if(fresh){ applyPreset(); persist(); }
+  $('#rule').textContent=`قیمت اصلی ${faDigits(Math.round(OFF*100))}٪ کمتر از ترب‌پی (تومان)`;
+  renderCats(); renderAll();
+})();
+})();
+</script>
+</body>
+</html>
